@@ -40,7 +40,8 @@ def classification_metrics(y_true, y_pred, label='',
                            output_dict=False, figsize=(8,4),
                            normalize='true', cmap='Blues',
                            colorbar=False, values_format=".2f",
-                           target_names = None, return_fig=True):
+                           target_names = None, return_fig=True,
+                           conf_matrix_text_kws= {}):
     """
     Calculate classification metrics from predictions and display Confusion matrix.
 
@@ -91,7 +92,8 @@ def classification_metrics(y_true, y_pred, label='',
                                             values_format="d", 
                                             colorbar=colorbar,
                                             ax = axes[0], 
-                                            display_labels=target_names);
+                                            display_labels=target_names,
+                                            text_kw=conf_matrix_text_kws);
     axes[0].set_title("Raw Counts")
     
     # Create a confusion matrix with the data with normalize argument 
@@ -101,7 +103,8 @@ def classification_metrics(y_true, y_pred, label='',
                                             values_format=values_format, #New arg
                                             colorbar=colorbar,
                                             ax = axes[1],
-                                            display_labels=target_names);
+                                            display_labels=target_names,
+                                            text_kw=conf_matrix_text_kws);
     axes[1].set_title("Normalized Confusion Matrix")
     
     # Adjust layout and show figure
@@ -195,7 +198,8 @@ def evaluate_classification_network(model,
                                     values_format=".2f", 
                                     colorbar=False, target_names=None, 
          return_fig=False, as_frame=False, frame_include_support = True, 
-         frame_include_macro_avg=True):
+         frame_include_macro_avg=True,
+         conf_matrix_text_kws={}):
     """Evaluates a neural network classification task using either
     separate X and y arrays or a tensorflow Dataset
 
@@ -235,7 +239,8 @@ def evaluate_classification_network(model,
                       figsize=figsize,
                       colorbar=colorbar,
                       values_format=values_format, 
-                      target_names=target_names,)
+                      target_names=target_names,
+                      conf_matrix_text_kws=conf_matrix_text_kws,)
     
     # Plot history, if provided
     if history is not None:
@@ -524,3 +529,103 @@ def get_results_df(results_dict, results_key='test',
         results_df = results_df.drop(columns='support')
     
     return results_df
+
+
+
+
+
+## Previous Helper Function    
+def convert_y_to_sklearn_classes(y, verbose=False):
+    """
+    Converts the target variable y to the appropriate format for sklearn classification models.
+
+    Parameters:
+    - y: The target variable array.
+    - verbose: Whether to print verbose output. Default is False.
+
+    Returns:
+    - The converted target variable array.
+
+    If y is already one-dimensional, it is returned as-is.
+    If y is two-dimensional with more than one column, the argmax function is used to determine the class labels.
+    If y is two-dimensional with one column, the round function is used to determine the class labels.
+
+    Note: The returned array is flattened and casted to integer type.
+    """
+    # If already one-dimension
+    if np.ndim(y)==1:
+        if verbose:
+            print("- y is 1D, using it as-is.")
+        return y
+        
+    # If 2 dimensions with more than 1 column:
+    elif y.shape[1]>1:
+        if verbose:
+            print("- y has is 2D with >1 column. Using argmax for metrics.")   
+        return np.argmax(y, axis=1)
+    
+    else:
+        if verbose:
+            print("y has 2D with 1 column. Using round for metrics.")
+        return np.round(y).flatten().astype(int)
+
+
+def get_true_pred_labels_images(model, ds, include_images=True, convert_y_for_sklearn=False):
+    """
+    Gets the true labels, predicted probabilities, and images (optional) from a Tensorflow model and Dataset object.
+
+    Args:
+        model (tf.keras.Model): The trained Tensorflow model.
+        ds (tf.data.Dataset): The dataset object containing the images and labels.
+        include_images (bool, optional): Whether to include the images in the output. Defaults to True.
+        convert_y_for_sklearn (bool, optional): Whether to convert the labels for sklearn compatibility. Defaults to False.
+
+    Returns:
+        tuple: A tuple containing the true labels, predicted probabilities, and images (optional).
+
+    Adapted from source: 
+    https://stackoverflow.com/questions/66386561/keras-classification-report-accuracy-is-different-between-model-predict-accurac
+    """
+    y_true = []
+    y_pred_probs = []
+    all_images = []
+    
+    # Loop through the dataset as a numpy iterator
+    for images, labels in ds.as_numpy_iterator():
+        
+        # Get prediction with batch_size=1
+        y_probs = model.predict(images, batch_size=1, verbose=0)
+
+        # Combine previous labels/preds with new labels/preds
+        y_true.extend(labels)
+        y_pred_probs.extend(y_probs)
+
+        if include_images == True:
+            all_images.extend(images)
+            
+    # Convert the lists to arrays
+    y_true = np.array(y_true)
+    y_pred_probs = np.array(y_pred_probs)
+
+    # Convert to classes (or not)
+    if convert_y_for_sklearn == True:
+        # Use our previous helper function to make preds into classes
+        y_true = convert_y_to_sklearn_classes(y_true)
+        y_pred = convert_y_to_sklearn_classes(y_pred_probs)
+    else: 
+        y_pred = y_pred_probs
+
+    # If the images should be included or not
+    if include_images == False:
+        return y_true, y_pred
+    else:
+        # Convert images to array and return everything
+        all_images = np.array(all_images)
+        return y_true, y_pred, all_images
+
+
+
+# """Gets the labels and predicted probabilities from a Tensorflow model and Dataset object.
+# Adapted from source: 
+# https://stackoverflow.com/questions/66386561/keras-classification-report-accuracy-is-different-between-model-predict-accurac
+# """
