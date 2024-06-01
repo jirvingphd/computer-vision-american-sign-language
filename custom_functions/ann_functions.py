@@ -112,12 +112,18 @@ def classification_metrics(y_true, y_pred, label='',
     plt.show()
     
     # Return dictionary of classification_report
+    return_list = []
     if output_dict==True:
         report_dict = classification_report(y_true, y_pred,target_names=target_names, output_dict=True)
-        return report_dict
+        return_list.append(report_dict)
+        # return report_dict
+        
+    if return_fig==True:
+        return_list.append(fig)
 
-    elif return_fig == True:
-        return fig
+    return return_list[0] if len(return_list)==1 else tuple(return_list)
+    # elif return_fig == True:
+    #     return fig
     
     
     
@@ -187,17 +193,18 @@ def evaluate_classification(model, X_train=None, y_train=None, X_test=None, y_te
         return results_dict
 
 
+
 def evaluate_classification_network(model, 
                                     X_train=None, y_train=None, 
                                     X_test=None, y_test=None,
-                                    history=None, history_figsize=(6,6),
+                                    history=None, history_figsize=(8,3),
                                     figsize=(6,4), normalize='true',
                                     output_dict = False,
                                     cmap_train='Blues',
                                     cmap_test="Reds",
                                     values_format=".2f", 
                                     colorbar=False, target_names=None, 
-         return_fig=False, as_frame=False, frame_include_support = True, 
+         return_fig_history=False, return_fig_conf_matrix=False, as_frame=False, frame_include_support = True, 
          frame_include_macro_avg=True,
          conf_matrix_text_kws={}):
     """Evaluates a neural network classification task using either
@@ -219,6 +226,7 @@ def evaluate_classification_network(model,
         colorbar (bool, optional): Arg for ConfusionMatrixDispaly: include colorbar or not. Defaults to False.
         values_format (str, optional): Format values on confusion matrix. Defaults to ".2f".
         target_names (array, optional): Text labels for the integer-encoded target. Passed in numeric order [label for "0", label for "1", etc.]
+        return_fig_history (bool, optional): Whether the matplotlib figure for training history is returned. Defaults to False.
         return_fig (bool, optional): Whether the matplotlib figure for confusion matrix is returned. Defaults to False.
                                           Note: Must set outout_dict to False and set return_fig to True to get figure returned.
 
@@ -233,6 +241,7 @@ def evaluate_classification_network(model,
         raise Exception('\nEither X_train & y_train or X_test & y_test must be provided.')
     # Initialize dict
     results_dict = {}
+    fig_dict=  {}
     
     # Shared Kwargs
     shared_kwargs = dict(output_dict=True, 
@@ -240,86 +249,146 @@ def evaluate_classification_network(model,
                       colorbar=colorbar,
                       values_format=values_format, 
                       target_names=target_names,
-                      conf_matrix_text_kws=conf_matrix_text_kws,)
-    
-    # Plot history, if provided
-    if history is not None:
-        plot_history(history, figsize=history_figsize)
-        
+                      conf_matrix_text_kws=conf_matrix_text_kws,
+                      return_fig = return_fig_conf_matrix)
     ## Adding a Print Header
     print("\n"+'='*80)
     print('- Evaluating Network...')
     print('='*80)
     
+    # Plot history, if provided
+    if history is not None:
+        fig_history = plot_history(history, figsize=history_figsize, ncols=2, return_fig=return_fig_history)
+        fig_dict['history'] = fig_history
+        # Show history from abov
+        plt.show()
+
+        
+
     ## TRAINING DATA EVALUATION
     # check if X_train was provided
     if X_train is not None:
+        ## Run model.evaluate         
+        print("\n- Evaluating Training Data:")
+
         ## Check if X_train is a dataset
         if hasattr(X_train,'map'):
-            # If it IS a Datset:
+            
+            # Run keras model.evaluate (without y since its a dataset)
+            print(model.evaluate(X_train, return_dict=True),'\n')
+            
+            ## Get predictions for training data
             # extract y_train and y_train_pred with helper function
             y_train, y_train_pred = get_true_pred_labels(model, X_train)
         else:
-            # Get predictions for training data
+            # Run keras model.evaluate (with y since its an array)
+            print(model.evaluate(X_train,y_train, return_dict=True),'\n')
+            
+            ## Get predictions for training data
             y_train_pred = model.predict(X_train)
+            
+        # # Show history from above
+        # if history is not None: 
+        #     fig_history.show()
+
         ## Pass both y-vars through helper compatibility function
         y_train = convert_y_to_sklearn_classes(y_train)
         y_train_pred = convert_y_to_sklearn_classes(y_train_pred)
         
         # Call the helper function to obtain regression metrics for training data
         results_train = classification_metrics(y_train, y_train_pred, cmap=cmap_train,label='Training Data', **shared_kwargs)
+                
         
-        ## Run model.evaluate         
-        print("\n- Evaluating Training Data:")
-        print(model.evaluate(X_train, return_dict=True))
-    
-    # If no X_train, then save empty list for results_train
+
+        # Check how many results are returned
+        if isinstance(results_train, tuple):
+            results_train, fig_conf_matrix_train = results_train
+        else:
+            fig_conf_matrix_train = None
+            
+        # Add results to dict               
         results_dict['train'] = results_train
-    # else:
-    #     results_train = None
-  
-  
+        # Add confusion matrix to fig_dict
+        if fig_conf_matrix_train is not None:
+            fig_dict['train'] = {"confusion_matrix":fig_conf_matrix_train}    
+
+
     ## TEST DATA EVALUATION
     # check if X_test was provided
     if X_test is not None:
+        ## Run model.evaluate         
+        print("\n- Evaluating Test Data:")
+        
+    
         ## Check if X_train is a dataset
         if hasattr(X_test,'map'):
-            # If it IS a Datset:
+            
+            # Run keras model.evaluate (without y since its a dataset)
+            print(model.evaluate(X_test, return_dict=True),'\n')
+            
+            ## Get predictions for training data
             # extract y_train and y_train_pred with helper function
             y_test, y_test_pred = get_true_pred_labels(model, X_test)
         else:
-            # Get predictions for training data
+            # Run keras model.evaluate (with y since its an array)
+            print(model.evaluate(X_test,y_test, return_dict=True),'\n')
+            
+            ## Get predictions for training data
             y_test_pred = model.predict(X_test)
+        
+
+        
         ## Pass both y-vars through helper compatibility function
         y_test = convert_y_to_sklearn_classes(y_test)
         y_test_pred = convert_y_to_sklearn_classes(y_test_pred)
         
         # Call the helper function to obtain regression metrics for training data
         results_test = classification_metrics(y_test, y_test_pred, cmap=cmap_test,label='Test Data', **shared_kwargs)
-        
-        ## Run model.evaluate         
-        print("\n- Evaluating Test Data:")
-        print(model.evaluate(X_test, return_dict=True))
-        
+
+
+        # Check how many results are returned
+        if isinstance(results_test, tuple):
+            results_test, fig_conf_matrix_test = results_test
+        else:
+            fig_conf_matrix_test = None
+            
         # Add results to dict
         results_dict['test'] = results_test
-    # If no X_test, then save empty list for results_test
-    # else:
-    #     results_test = None
-      
-    if (output_dict == True) | (return_fig==True):
-        # # Store results in a dataframe if ouput_frame is True
-        # results_dict = {'train':results_train,
-        #                 'test': results_test}
+        
+        if fig_conf_matrix_test is not None:
+            fig_dict['test'] = {"confusion_matrix":fig_conf_matrix_test}
+           
+
+    # If no resuls returned, return None
+    if not output_dict and not return_fig_conf_matrix and not return_fig_history:
+        return 
+    
+    # List of return values      
+    return_list = []
+    
+    # If output_dict is True, return the results_dict
+    if (output_dict == True):    
+        
+        # Convert to dictionary of dataframes
         if as_frame:
             results_dict = {k: get_results_df(results_dict, results_key=k,include_support=frame_include_support,
                                               include_macro_avg=frame_include_macro_avg) for k in results_dict.keys()}
-        return results_dict
+        # Append to return list
+        return_list.append(results_dict)
+        
+    # if either figure is requested, append to return list
+    if (return_fig_history==True) | (return_fig_conf_matrix==True):
+        return_list.append(fig_dict)
+        
+    # Return final  results
+    return return_list[0] if len(return_list)==1 else tuple(return_list)
+    
 
 
 
 
-def plot_history(history, figsize=(6,8), return_fig=False):
+def plot_history(history, figsize=(8,4), return_fig=False,ncols=2,
+                 suptitle="Training History",suptitle_y=1.02, suptitle_fontsize=16):
     """Plots the training and validation curves for all metrics in a Tensorflow History object.
 
     Args:
@@ -334,10 +403,17 @@ def plot_history(history, figsize=(6,8), return_fig=False):
     import numpy as np
     # Get a unique list of metrics 
     all_metrics = np.unique([k.replace('val_','') for k in history.history.keys()])
+    nrows = len(all_metrics)//ncols
+    # nrows = len(unique_labels)//ncols + 1
+    
+    
+    
     # Plot each metric
-    n_plots = len(all_metrics)
-    fig, axes = plt.subplots(nrows=n_plots, figsize=figsize)
+    # n_plots = len(all_metrics)
+    
+    fig, axes = plt.subplots(nrows=nrows,ncols=ncols, figsize=figsize)
     axes = axes.flatten()
+    
     # Loop through metric names add get an index for the axes
     for i, metric in enumerate(all_metrics):
         # Get the epochs and metric values
@@ -358,82 +434,13 @@ def plot_history(history, figsize=(6,8), return_fig=False):
     # Adjust subplots and show
     fig.tight_layout()
  
+    if suptitle is not None:
+        fig.suptitle(suptitle, fontsize=suptitle_fontsize, y=suptitle_y)
+        
     if return_fig:
         return fig
     else:
         plt.show()
-
- 
-
-
-# def evaluate_classification(model, X_train, y_train, X_test, y_test,
-#                          figsize=(6,4), normalize='true', output_dict = False,
-#                             cmap_train='Blues', cmap_test="Reds",colorbar=False):
-    
-#     # Get predictions for training data
-#     y_train_pred = model.predict(X_train)
-    
-#     # Call the helper function to obtain regression metrics for training data
-#     results_train = classification_metrics(y_train, y_train_pred, #verbose = verbose,
-#                                      output_dict=True, figsize=figsize,
-#                                          colorbar=colorbar, cmap=cmap_train,
-#                                      label='Training Data')
-#     print()
-#     # Get predictions for test data
-#     y_test_pred = model.predict(X_test)
-#     # Call the helper function to obtain regression metrics for test data
-#     results_test = classification_metrics(y_test, y_test_pred, #verbose = verbose,
-#                                   output_dict=True,figsize=figsize,
-#                                          colorbar=colorbar, cmap=cmap_test,
-#                                     label='Test Data' )
-#     if output_dict == True:
-#         # Store results in a dataframe if ouput_frame is True
-#         results_dict = {'train':results_train,
-#                     'test': results_test}
-#         return results_dict
-
-
-# ### FINAL FROM FLEXIBILE EVAL FUNCTIONS LESSON
-   
-# from sklearn.metrics import classification_report, ConfusionMatrixDisplay
-# import matplotlib.pyplot as plt
-
-
-# def classification_metrics(y_true, y_pred, label='',
-#                            output_dict=False, figsize=(8,4),
-#                            normalize='true', cmap='Blues',
-#                            colorbar=False,values_format=".2f"):
-#     """Classification metrics function from Intro to Machine Learning"""
-#     # Get the classification report
-#     report = classification_report(y_true, y_pred)
-#     ## Print header and report
-#     header = "-"*70
-#     print(header, f" Classification Metrics: {label}", header, sep='\n')
-#     print(report)
-    
-#     ## CONFUSION MATRICES SUBPLOTS
-#     fig, axes = plt.subplots(ncols=2, figsize=figsize)
-    
-#     # create a confusion matrix  of raw counts
-#     ConfusionMatrixDisplay.from_predictions(y_true, y_pred,
-#                 normalize=None, cmap='gist_gray_r', values_format="d", colorbar=colorbar,
-#                 ax = axes[0],);
-#     axes[0].set_title("Raw Counts")
-    
-#     # create a confusion matrix with the test data
-#     ConfusionMatrixDisplay.from_predictions(y_true, y_pred,
-#                 normalize=normalize, cmap=cmap, values_format=values_format, colorbar=colorbar,
-#                 ax = axes[1]);
-#     axes[1].set_title("Normalized Confusion Matrix")
-    
-#     # Adjust layout and show figure
-#     fig.tight_layout()
-#     plt.show()
-    
-#     # Return dictionary of classification_report
-#     if output_dict==True:
-#         report_dict = classification_report(y_true, y_pred, output_dict=True)
-#         return report_dict
 
 
 def get_true_pred_labels(model,ds):
