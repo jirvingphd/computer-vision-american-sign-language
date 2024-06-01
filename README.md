@@ -92,3 +92,42 @@ Example of Each letter:
 
 ## Results
 
+
+### Best Model
+
+- EfficientNetB0
+
+
+#### Test Results
+
+
+<img src="images/best_model_history.png">
+
+```
+---------------------------------------------------------------------
+ Classification Metrics: Test Data
+----------------------------------------------------------------------
+              precision    recall  f1-score   support
+    accuracy                           0.78       228
+   macro avg       0.78      0.79      0.77       228
+weighted avg       0.79      0.78      0.77       228
+```
+
+
+
+
+<img src="images/best_model_conf_matrix.png">
+
+<img src="images/best_model_results_bar.png">
+
+
+```
+
+CPU times: user 2min 47s, sys: 31.5 s, total: 3min 18s
+Wall time: 2min 40s
+
+- Evaluating Test Data:
+8/8 [==============================] - 2s 238ms/step - loss: 0.8256 - accuracy: 0.7763
+{'loss': 0.8255632519721985, 'accuracy': 0.7763158082962036}
+```
+
