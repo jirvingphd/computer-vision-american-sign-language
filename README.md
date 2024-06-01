@@ -67,7 +67,7 @@ Example of Each letter:
 
 
 
-<img src="images/label_dist.png">
+<img src="images/label-distribution-countplot.png">
 
 
 
