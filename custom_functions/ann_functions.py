@@ -3,84 +3,71 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-# def plot_history(history,figsize=(6,8)):
-#     # Get a unique list of metrics 
-#     all_metrics = np.unique([k.replace('val_','') for k in history.history.keys()])
-
-#     # Plot each metric
-#     n_plots = len(all_metrics)
-#     fig, axes = plt.subplots(nrows=n_plots, figsize=figsize)
-#     axes = axes.flatten()
-
-#     # Loop through metric names add get an index for the axes
-#     for i, metric in enumerate(all_metrics):
-
-#         # Get the epochs and metric values
-#         epochs = history.epoch
-#         score = history.history[metric]
-
-#         # Plot the training results
-#         axes[i].plot(epochs, score, label=metric, marker='.')
-#         # Plot val results (if they exist)
-#         try:
-#             val_score = history.history[f"val_{metric}"]
-#             axes[i].plot(epochs, val_score, label=f"val_{metric}",marker='.')
-#         except:
-#             pass
-
-#         finally:
-#             axes[i].legend()
-#             axes[i].set(title=metric, xlabel="Epoch",ylabel=metric)
-
-#     # Adjust subplots and show
-#     fig.tight_layout()
-#     plt.show()
 
 def classification_metrics(y_true, y_pred, label='',
                            output_dict=False, figsize=(8,4),
                            normalize='true', cmap='Blues',
                            colorbar=False, values_format=".2f",
                            target_names = None, return_fig=True,
-                           conf_matrix_text_kws= {}):
+                           conf_matrix_text_kws= {}, print_report=True,
+                           return_str_report=False):
     """
-    Calculate classification metrics from predictions and display Confusion matrix.
+    Compute classification metrics and display confusion matrices.
 
-    Args:
-        y_true (Series/array): True target values.
-        y_pred (Series/array): Predicted target values.
-        label (str, optional): Label for printed header. Defaults to ''.
-        output_dict (bool, optional): Return the results of classification_report as a dict. Defaults to False.
-        figsize (tuple, optional): figsize for confusion matrix subplots. Defaults to (8,4).
-        normalize (str, optional): Arg for sklearn's ConfusionMatrixDisplay. Defaults to 'true' (conf mat values normalized to true class).
-        cmap (str, optional): Colormap for the ConfusionMatrixDisplay. Defaults to 'Blues'.
-        colorbar (bool, optional): Arg for ConfusionMatrixDisplay: include colorbar or not. Defaults to False.
-        values_format (str, optional): Format values on confusion matrix. Defaults to ".2f".
-        target_names (array, optional): Text labels for the integer-encoded target. Passed in numeric order [label for "0", label for "1", etc.].
-        return_fig (bool, optional): To get matplotlib figure for confusion matrix, set output_dict to False and set return_fig to True.
+    Parameters:
+    - y_true (array-like): True labels.
+    - y_pred (array-like): Predicted labels.
+    - label (str): Label for the classification metrics.
+    - output_dict (bool): Whether to return the classification report as a dictionary.
+    - figsize (tuple): Figure size for the confusion matrix plot.
+    - normalize (str): Normalization method for the confusion matrix. Default is 'true'.
+    - cmap (str): Colormap for the confusion matrix plot. Default is 'Blues'.
+    - colorbar (bool): Whether to display a colorbar in the confusion matrix plot.
+    - values_format (str): Format for the values in the confusion matrix. Default is ".2f".
+    - target_names (list): List of target names for the classification report.
+    - return_fig (bool): Whether to return the figure object.
+    - conf_matrix_text_kws (dict): Additional keyword arguments for the text in the confusion matrix plot.
+    - print_report (bool): Whether to print the classification report.
+    - return_str_report (bool): Whether to return the classification report as a string.
 
     Returns:
-        dict: Dictionary from classification_report. Only returned if output_dict=True.
-        fig: Matplotlib figure with confusion matrix. Only returned if output_dict=False and return_fig=True.
+    - If output_dict is True, returns a dictionary containing the classification report.
+    - If return_fig is True, returns the figure object.
+    - If return_str_report is True, returns the classification report as a string.
+    - If none of the above conditions are met, returns a tuple containing the dictionary and figure object.
 
     Note: 
         This is a modified version of the classification metrics function from Intro to Machine Learning.
         Updates:
           - Reversed raw counts confusion matrix cmap (so darker==more).
           - Added arg for normalized confusion matrix values_format.
+          - Added arg for text_kw in confusion matrix display.
+          - Added option to return classification report as a string.
+          - Added option to return classification report as a dictionary.
+          - Added option to return the figure object.
+          - Made printing the report optional.
+          
+    Note: Only evaluate_classification_network has been updated to use this new function.
+    evaluate_classification has not been updated.
     """
     from sklearn.metrics import classification_report, ConfusionMatrixDisplay
     import matplotlib.pyplot as plt
     import numpy as np
     import warnings
+    
+    # Silence warning when 0 labels in classification report
     from sklearn.exceptions import UndefinedMetricWarning
     warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
-    report = classification_report(y_true, y_pred,target_names=target_names)
+    ## Get classification report
+    report_str = classification_report(y_true, y_pred, target_names=target_names)
     
     ## Print header and report
-    header = "-"*70
-    print(header, f" Classification Metrics: {label}", header, sep='\n')
-    print(report)
+    header = "-"*80
+    report = header + f"\n Classification Metrics: {label} \n" + header + f"\n{report_str}" +"\n" + header
+    
+    if print_report:
+        print(report)
     
     ## CONFUSION MATRICES SUBPLOTS
     fig, axes = plt.subplots(ncols=2, figsize=figsize)
@@ -117,128 +104,70 @@ def classification_metrics(y_true, y_pred, label='',
         report_dict = classification_report(y_true, y_pred,target_names=target_names, output_dict=True)
         return_list.append(report_dict)
         # return report_dict
+    
         
     if return_fig==True:
         return_list.append(fig)
+        
+    if return_str_report:
+        return_list.append(report_str)
 
     return return_list[0] if len(return_list)==1 else tuple(return_list)
     # elif return_fig == True:
     #     return fig
     
     
-    
-def evaluate_classification(model, X_train=None, y_train=None, X_test=None, y_test=None,
-                            figsize=(6,4), normalize='true', output_dict = False,
-                            cmap_train='Blues', cmap_test="Reds",colorbar=False,
-                            values_format='.2f',
-                            target_names=None, return_fig=False):
-    """Evalutes an sklearn-compatible classification model on training and test data. 
-    For each data split, return the classification report and confusion matrix display. 
-
-    Args:
-        model (sklearn estimator): Classification model to evaluate.
-        X_train (Frame/Array, optional): Training data. Defaults to None.
-        y_train (Series/Array, optional): Training labels. Defaults to None.
-        X_test (Frame/Array, optional): Test data. Defaults to None.
-        y_test (Series/Array, optional): Test labels. Defaults to None.
-        figsize (tuple, optional): figsize for confusion matrix subplots. Defaults to (6,4).
-        normalize (str, optional): arg for sklearn's ConfusionMatrixDisplay. Defaults to 'true' (conf mat values normalized to true class).  
-        output_dict (bool, optional):  Return the results of classification_report as a dict. Defaults to False. Defaults to False.
-        cmap_train (str, optional): Colormap for the ConfusionMatrixDisplay for training data. Defaults to 'Blues'.
-        cmap_test (str, optional): Colormap for the ConfusionMatrixDisplay for test data.  Defaults to "Reds".
-        colorbar (bool, optional): Arg for ConfusionMatrixDispaly: include colorbar or not. Defaults to False.
-        values_format (str, optional): Format values on confusion matrix. Defaults to ".2f".
-        target_names (array, optional): Text labels for the integer-encoded target. Passed in numeric order [label for "0", label for "1", etc.]
-        return_fig (bool, optional): Whether the matplotlib figure for confusion matrix is returned. Defaults to False.
-                                          Note: Must set outout_dict to False and set return_fig to True to get figure returned.
-     Returns (Only 1 value is returned, but contents vary):
-        dict: Dictionary that contains results for "train" and "test. 
-              Contents of dictionary depending on output_dict and return_fig:
-              - if output_dict==True and return_fig==False: returns dictionary of classification report results
-            - if output_dict==False and return_fig==True: returns dictionary of confusion matrix displays.
-    """
-    # Combining arguments used for both training and test results
-    shared_kwargs = dict(output_dict=output_dict,  # output_dict: Changed from hard-coded True
-                    #   figsize=figsize, 
-                      colorbar=colorbar, 
-                      target_names=target_names,
-                      values_format=values_format,
-                      return_fig=return_fig)
- 
-    if (X_train is None) & (X_test is None):
-        raise Exception('\nEither X_train & y_train or X_test & y_test must be provided.')
- 
-    if (X_train is not None) & (y_train is not None):
-        # Get predictions for training data
-        y_train_pred = model.predict(X_train)
-        # Call the helper function to obtain regression metrics for training data
-        results_train = classification_metrics(y_train, y_train_pred, cmap=cmap_train, figsize=figsize,label='Training Data', **shared_kwargs)
-        print()
-    else:
-        results_train=None
-  
-    if (X_test is not None) & (y_test is not None):
-        # Get predictions for test data
-        y_test_pred = model.predict(X_test)
-        # Call the helper function to obtain regression metrics for test data
-        results_test = classification_metrics(y_test, y_test_pred,  cmap=cmap_test, figsize=figsize, label='Test Data' , **shared_kwargs)
-    else:
-        results_test = None
-  
-  
-    if (output_dict == True) | (return_fig==True):
-        # Store results in a dataframe if ouput_frame is True
-        results_dict = {'train':results_train,
-                        'test': results_test}
-        return results_dict
-
-
 
 def evaluate_classification_network(model, 
                                     X_train=None, y_train=None, 
                                     X_test=None, y_test=None,
                                     history=None, history_figsize=(8,3),
                                     figsize=(6,4), normalize='true',
-                                    output_dict = False,
+                                    output_dict=False,
                                     cmap_train='Blues',
                                     cmap_test="Reds",
                                     values_format=".2f", 
                                     colorbar=False, target_names=None, 
-         return_fig_history=False, return_fig_conf_matrix=False, as_frame=False, frame_include_support = True, 
-         frame_include_macro_avg=True,
-         conf_matrix_text_kws={}):
-    """Evaluates a neural network classification task using either
-    separate X and y arrays or a tensorflow Dataset
-
-    Args:
-        model (sklearn-compatible classifier): Model to evaluate.
-        X_train (array or tf.data.Dataset, optional): Training data. Defaults to None.
-        y_train (array, or None if X_train is a tf Dataset, optional): Training labels (if not using a tf dataset). Defaults to None.
-        X_test (array or tf.data.Dataset, optional): Test data. Defaults to None.
-        y_test (array, or None if X_test is a tf Dataset, optional): Test labels (if not using a tf Dataset). Defaults to None.
-        history (tensorflow history object, optional): History object from model training. Defaults to None.
-        history_figsize (tuple, optional): Total figure size for plot_history. Defaults to (6,8).
-        figsize (tuple, optional): figsize for confusion matrix subplots. Defaults to (6,4).
-        normalize (str, optional): arg for sklearn's ConfusionMatrixDisplay. Defaults to 'true' (conf mat values normalized to true class).  
-        output_dict (bool, optional):  Return the results of classification_report as a dict. Defaults to False. Defaults to False.
-        cmap_train (str, optional): Colormap for the ConfusionMatrixDisplay for training data. Defaults to 'Blues'.
-        cmap_test (str, optional): Colormap for the ConfusionMatrixDisplay for test data.  Defaults to "Reds".
-        colorbar (bool, optional): Arg for ConfusionMatrixDispaly: include colorbar or not. Defaults to False.
-        values_format (str, optional): Format values on confusion matrix. Defaults to ".2f".
-        target_names (array, optional): Text labels for the integer-encoded target. Passed in numeric order [label for "0", label for "1", etc.]
-        return_fig_history (bool, optional): Whether the matplotlib figure for training history is returned. Defaults to False.
-        return_fig (bool, optional): Whether the matplotlib figure for confusion matrix is returned. Defaults to False.
-                                          Note: Must set outout_dict to False and set return_fig to True to get figure returned.
-
-
-     Returns (Only 1 value is returned, but contents vary):
-        dict: Dictionary that contains results for "train" and "test. 
-            Contents of dictionary depending on output_dict and return_fig:
-              - if output_dict==True and return_fig==False: returns dictionary of classification report results
-            - if output_dict==False and return_fig==True: returns dictionary of confusion matrix displays.
+                                    return_fig_history=False, return_fig_conf_matrix=False, as_frame=False, frame_include_support=True, 
+                                    frame_include_macro_avg=True, return_str_report=False,
+                                    conf_matrix_text_kws={}):
     """
+    Evaluates a classification network model using training and test data.
+
+    Parameters:
+    - model: The classification network model to evaluate.
+    - X_train: The training data features. Default is None.
+    - y_train: The training data labels. Default is None.
+    - X_test: The test data features. Default is None.
+    - y_test: The test data labels. Default is None.
+    - history: The training history of the model. Default is None.
+    - history_figsize: The size of the history plot. Default is (8, 3).
+    - figsize: The size of the confusion matrix plot. Default is (6, 4).
+    - normalize: Whether to normalize the confusion matrix. Default is 'true'.
+    - output_dict: Whether to return the results as a dictionary. Default is False.
+    - cmap_train: The color map for the training data confusion matrix. Default is 'Blues'.
+    - cmap_test: The color map for the test data confusion matrix. Default is 'Reds'.
+    - values_format: The format of the values in the confusion matrix. Default is '.2f'.
+    - colorbar: Whether to show the color bar in the confusion matrix. Default is False.
+    - target_names: The names of the target classes. Default is None.
+    - return_fig_history: Whether to return the history plot as a figure. Default is False.
+    - return_fig_conf_matrix: Whether to return the confusion matrix plot as a figure. Default is False.
+    - as_frame: Whether to return the results as a dictionary of dataframes. Default is False.
+    - frame_include_support: Whether to include support in the dataframe. Default is True.
+    - frame_include_macro_avg: Whether to include macro average in the dataframe. Default is True.
+    - return_str_report: Whether to return the classification report as a string. Default is False.
+    - conf_matrix_text_kws: Additional keyword arguments for the text in the confusion matrix. Default is {}.
+
+    Returns:
+    - If output_dict is False and neither return_fig_history nor return_fig_conf_matrix is True, returns None.
+    - If output_dict is True, returns the results as a dictionary.
+    - If return_fig_history or return_fig_conf_matrix is True, returns the figures as a dictionary.
+    - If both output_dict and return_fig_history or return_fig_conf_matrix are True, returns a tuple of the results dictionary and the figures dictionary.
+    """
+    # Check if X_train or X_test is provided
     if (X_train is None) & (X_test is None):
         raise Exception('\nEither X_train & y_train or X_test & y_test must be provided.')
+    
     # Initialize dict
     results_dict = {}
     fig_dict=  {}
@@ -250,7 +179,10 @@ def evaluate_classification_network(model,
                       values_format=values_format, 
                       target_names=target_names,
                       conf_matrix_text_kws=conf_matrix_text_kws,
-                      return_fig = return_fig_conf_matrix)
+                      return_fig = return_fig_conf_matrix,
+                      return_str_report=return_str_report,
+                    
+                      )
     ## Adding a Print Header
     print("\n"+'='*80)
     print('- Evaluating Network...')
@@ -263,7 +195,6 @@ def evaluate_classification_network(model,
         # Show history from abov
         plt.show()
 
-        
 
     ## TRAINING DATA EVALUATION
     # check if X_train was provided
@@ -295,23 +226,44 @@ def evaluate_classification_network(model,
         y_train = convert_y_to_sklearn_classes(y_train)
         y_train_pred = convert_y_to_sklearn_classes(y_train_pred)
         
-        # Call the helper function to obtain regression metrics for training data
-        results_train = classification_metrics(y_train, y_train_pred, cmap=cmap_train,label='Training Data', **shared_kwargs)
-                
         
+        # Call the helper function to obtain regression metrics for training data
+        results_train = classification_metrics(y_train, y_train_pred, 
+                                               cmap=cmap_train,label='Training Data',
+                                               **shared_kwargs,
+                                               )
 
         # Check how many results are returned
         if isinstance(results_train, tuple):
-            results_train, fig_conf_matrix_train = results_train
+            
+            if len(results_train)==2:
+                # Unpack tuple and set train_report_str to None
+                results_train, fig_conf_matrix_train = results_train
+                train_report_str=None
+            
+            elif len(results_train)==3:
+                # Unpack tuple
+                results_train, fig_conf_matrix_train, train_report_str = results_train    
+            
+            else:
+                raise ValueError("Results tuple has unexpected length.")
+        
+        # If only one result returned
         else:
             fig_conf_matrix_train = None
+            train_report_str = None
             
         # Add results to dict               
         results_dict['train'] = results_train
+        
         # Add confusion matrix to fig_dict
         if fig_conf_matrix_train is not None:
-            fig_dict['train'] = {"confusion_matrix":fig_conf_matrix_train}    
-
+            fig_dict['train'] = {"confusion_matrix":fig_conf_matrix_train}  
+        # Add report_str to results_dict
+        
+        if train_report_str is not None:
+            fig_dict['train']['report_str'] = train_report_str
+            
 
     ## TEST DATA EVALUATION
     # check if X_test was provided
@@ -344,21 +296,37 @@ def evaluate_classification_network(model,
         
         # Call the helper function to obtain regression metrics for training data
         results_test = classification_metrics(y_test, y_test_pred, cmap=cmap_test,label='Test Data', **shared_kwargs)
-
-
         # Check how many results are returned
         if isinstance(results_test, tuple):
-            results_test, fig_conf_matrix_test = results_test
+            
+            if len(results_test)==2:
+                # Unpack tuple and set train_report_str to None
+                results_test, fig_conf_matrix_test = results_test
+                test_report_str=None
+            
+            elif len(results_test)==3:
+                # Unpack tuple
+                results_test, fig_conf_matrix_test, test_report_str = results_test    
+            
+            else:
+                raise ValueError("Results tuple has unexpected length.")
+        
+        # If only one result returned
         else:
             fig_conf_matrix_test = None
+            test_report_str = None
             
-        # Add results to dict
+        # Add results to dict               
         results_dict['test'] = results_test
         
+        # Add confusion matrix to fig_dict
         if fig_conf_matrix_test is not None:
-            fig_dict['test'] = {"confusion_matrix":fig_conf_matrix_test}
-           
-
+            fig_dict['test'] = {"confusion_matrix":fig_conf_matrix_test}  
+        # Add report_str to results_dict
+        
+        if test_report_str is not None:
+            fig_dict['test']['report_str'] = test_report_str
+        
     # If no resuls returned, return None
     if not output_dict and not return_fig_conf_matrix and not return_fig_history:
         return 
@@ -371,10 +339,30 @@ def evaluate_classification_network(model,
         
         # Convert to dictionary of dataframes
         if as_frame:
-            results_dict = {k: get_results_df(results_dict, results_key=k,include_support=frame_include_support,
-                                              include_macro_avg=frame_include_macro_avg) for k in results_dict.keys()}
+            
+            final_results = {}
+            # results_dict = {k: get_results_df(results_dict, results_key=k, include_support=frame_include_support,
+            #                                   include_macro_avg=frame_include_macro_avg) for k in results_dict.keys()
+            #                 }
+            
+            
+            for k in results_dict.keys():
+                split_results = get_results_df(results_dict, results_key=k, include_support=frame_include_support,
+                                               include_macro_avg=frame_include_macro_avg)
+                
+                # Ubpack split results
+                if isinstance(split_results, tuple):
+                    if len(split_results)==2:
+                        final_results[k] = {'results-classes':split_results[0],
+                                            'results-overall':split_results[1]}
+                    else:
+                        final_results[k] = {'results-classes':split_results[0]}#,
+                    
+        else:
+            final_results = results_dict
+
         # Append to return list
-        return_list.append(results_dict)
+        return_list.append(final_results)
         
     # if either figure is requested, append to return list
     if (return_fig_history==True) | (return_fig_conf_matrix==True):
@@ -488,6 +476,73 @@ def convert_y_to_sklearn_classes(y, verbose=False):
 
 
 
+    
+def evaluate_classification(model, X_train=None, y_train=None, X_test=None, y_test=None,
+                            figsize=(6,4), normalize='true', output_dict = False,
+                            cmap_train='Blues', cmap_test="Reds",colorbar=False,
+                            values_format='.2f',
+                            target_names=None, return_fig=False):
+    """Evalutes an sklearn-compatible classification model on training and test data. 
+    For each data split, return the classification report and confusion matrix display. 
+
+    Args:
+        model (sklearn estimator): Classification model to evaluate.
+        X_train (Frame/Array, optional): Training data. Defaults to None.
+        y_train (Series/Array, optional): Training labels. Defaults to None.
+        X_test (Frame/Array, optional): Test data. Defaults to None.
+        y_test (Series/Array, optional): Test labels. Defaults to None.
+        figsize (tuple, optional): figsize for confusion matrix subplots. Defaults to (6,4).
+        normalize (str, optional): arg for sklearn's ConfusionMatrixDisplay. Defaults to 'true' (conf mat values normalized to true class).  
+        output_dict (bool, optional):  Return the results of classification_report as a dict. Defaults to False. Defaults to False.
+        cmap_train (str, optional): Colormap for the ConfusionMatrixDisplay for training data. Defaults to 'Blues'.
+        cmap_test (str, optional): Colormap for the ConfusionMatrixDisplay for test data.  Defaults to "Reds".
+        colorbar (bool, optional): Arg for ConfusionMatrixDispaly: include colorbar or not. Defaults to False.
+        values_format (str, optional): Format values on confusion matrix. Defaults to ".2f".
+        target_names (array, optional): Text labels for the integer-encoded target. Passed in numeric order [label for "0", label for "1", etc.]
+        return_fig (bool, optional): Whether the matplotlib figure for confusion matrix is returned. Defaults to False.
+                                          Note: Must set outout_dict to False and set return_fig to True to get figure returned.
+     Returns (Only 1 value is returned, but contents vary):
+        dict: Dictionary that contains results for "train" and "test. 
+              Contents of dictionary depending on output_dict and return_fig:
+              - if output_dict==True and return_fig==False: returns dictionary of classification report results
+            - if output_dict==False and return_fig==True: returns dictionary of confusion matrix displays.
+    """
+    # Combining arguments used for both training and test results
+    shared_kwargs = dict(output_dict=output_dict,  # output_dict: Changed from hard-coded True
+                    #   figsize=figsize, 
+                      colorbar=colorbar, 
+                      target_names=target_names,
+                      values_format=values_format,
+                      return_fig=return_fig)
+ 
+    if (X_train is None) & (X_test is None):
+        raise Exception('\nEither X_train & y_train or X_test & y_test must be provided.')
+ 
+    if (X_train is not None) & (y_train is not None):
+        # Get predictions for training data
+        y_train_pred = model.predict(X_train)
+        # Call the helper function to obtain regression metrics for training data
+        results_train = classification_metrics(y_train, y_train_pred, cmap=cmap_train, figsize=figsize,label='Training Data', **shared_kwargs)
+        print()
+    else:
+        results_train=None
+  
+    if (X_test is not None) & (y_test is not None):
+        # Get predictions for test data
+        y_test_pred = model.predict(X_test)
+        # Call the helper function to obtain regression metrics for test data
+        results_test = classification_metrics(y_test, y_test_pred,  cmap=cmap_test, figsize=figsize, label='Test Data' , **shared_kwargs)
+    else:
+        results_test = None
+  
+  
+    if (output_dict == True) | (return_fig==True):
+        # Store results in a dataframe if ouput_frame is True
+        results_dict = {'train':results_train,
+                        'test': results_test}
+        return results_dict
+
+
 
 
 def get_results_df(results_dict, results_key='test', 
@@ -519,12 +574,14 @@ def get_results_df(results_dict, results_key='test',
     # Create DataFrames
     results_df = pd.DataFrame(results).T
     
+    
     if include_macro_avg:
         overall_results = pd.DataFrame(macro_avg, index=[average_rowname])#.T
-    
+        overall_results['accuracy'] = accuracy
+        
         ## Concatenate the overall results to the results_df
-        results_df = pd.concat([results_df, overall_results],axis=0)
-        results_df.loc[average_rowname,'accuracy'] = accuracy
+        # results_df = pd.concat([results_df, overall_results],axis=0)
+        # results_df.loc[average_rowname,'accuracy'] = accuracy
     
     # Recast support as int
     results_df['support'] = results_df['support'].astype(int)
@@ -535,7 +592,10 @@ def get_results_df(results_dict, results_key='test',
     if not include_support:
         results_df = results_df.drop(columns='support')
     
-    return results_df
+    if include_macro_avg:
+        return results_df, overall_results
+    else:
+        return results_df
 
 
 
