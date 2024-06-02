@@ -320,8 +320,10 @@ def evaluate_classification_network(model,
         results_dict['test'] = results_test
         
         # Add confusion matrix to fig_dict
+        fig_dict['test'] = {}
+        
         if fig_conf_matrix_test is not None:
-            fig_dict['test'] = {"confusion_matrix":fig_conf_matrix_test}  
+            fig_dict['test']["confusion_matrix"]=fig_conf_matrix_test
         # Add report_str to results_dict
         
         if test_report_str is not None:
@@ -691,8 +693,3 @@ def get_true_pred_labels_images(model, ds, include_images=True, convert_y_for_sk
         return y_true, y_pred, all_images
 
 
-
-# """Gets the labels and predicted probabilities from a Tensorflow model and Dataset object.
-# Adapted from source: 
-# https://stackoverflow.com/questions/66386561/keras-classification-report-accuracy-is-different-between-model-predict-accurac
-# """
