@@ -1,2 +1,2 @@
 start_time,name,fit_time,precision,recall,f1-score,accuracy,model_save_fpath,save_classification_report_fpath,save_history_fpath,save_confusion_matrix_fpath
-06/02/2024 19:29:53,towards-data-science,0:00:06.891210,0.001,0.038,0.002,0.022,modeling/models/towards-data-science,modeling/models/towards-data-science/classification_report.txt,modeling/models/towards-data-science/history.png,modeling/models/towards-data-science/confusion_matrix.png
+06/02/2024 19:32:57,towards-data-science,0:00:06.817685,0.003,0.043,0.006,0.035,modeling/models/towards-data-science,modeling/models/towards-data-science/classification_report.txt,modeling/models/towards-data-science/history.png,modeling/models/towards-data-science/confusion_matrix.png
