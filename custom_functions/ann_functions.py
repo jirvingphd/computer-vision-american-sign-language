@@ -10,7 +10,7 @@ def classification_metrics(y_true, y_pred, label='',
                            colorbar=False, values_format=".2f",
                            target_names = None, return_fig=True,
                            conf_matrix_text_kws= {}, print_report=True,
-                           return_str_report=False):
+                           return_str_report=True):
     """
     Compute classification metrics and display confusion matrices.
 
@@ -110,9 +110,10 @@ def classification_metrics(y_true, y_pred, label='',
         return_list.append(fig)
         
     if return_str_report:
-        return_list.append(report_str)
+        return_list.append(report)
 
-    return return_list[0] if len(return_list)==1 else tuple(return_list)
+    # return return_list[0] if len(return_list)==1 else tuple(return_list)\
+    return tuple(return_list)
     # elif return_fig == True:
     #     return fig
     
@@ -262,7 +263,7 @@ def evaluate_classification_network(model,
         # Add report_str to results_dict
         
         if train_report_str is not None:
-            fig_dict['train']['report_str'] = train_report_str
+            fig_dict['train']['classification_report'] = train_report_str
             
 
     ## TEST DATA EVALUATION
@@ -327,7 +328,7 @@ def evaluate_classification_network(model,
         # Add report_str to results_dict
         
         if test_report_str is not None:
-            fig_dict['test']['report_str'] = test_report_str
+            fig_dict['test']['classification_report'] = test_report_str
         
     # If no resuls returned, return None
     if not output_dict and not return_fig_conf_matrix and not return_fig_history:
