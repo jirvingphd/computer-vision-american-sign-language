@@ -61,7 +61,7 @@ weighted avg       0.79      0.76      0.76       228
 ```
 
 
-<img src="modeling/models/EfficientNetB0-1/classification_report.txt">
+<img src="modeling/models/EfficientNetB0-1/confusion_matrix.png">
 
 
 #### Example Explanationsfor Model Predictions (Comging Soon!)
