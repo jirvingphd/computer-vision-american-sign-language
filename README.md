@@ -87,13 +87,6 @@ Example of Each letter:
 - Explain image classifications using  Lime's ImageExplainer.
 
 
-#### TO DO:
-
-- [x] Apply transfer learning
-- [x] Save best model for deployment
-= [ ] Apply LimeExplainer with best model.
-- [ ] Tune the best architecture with keras tuner.
-- [ ] Create a streamlit application for live inference.
 
 
 ## Results
@@ -165,6 +158,15 @@ weighted avg       0.79      0.76      0.76       228
 > Placeholder for example explanation of correctly classified image
 > Placeholder for example explanation of incorrectly classified image
 > Placeholder for example explanation of the 2 clases most often confused for each other.
+
+### To Dos:
+- [x] Apply transfer learning
+- [ ] Save best model for deployment `[Fix issue with EfficientNet and current tensorlfow!]`
+- [ ] Tune the best architecture with keras tuner.
+- [ ] Apply LimeExplainer with best model. 
+
+- [ ] Deploy a streamlit application for live inference from images. 
+
 
 ### Future Work
 >There are many more iterations to test for this task:

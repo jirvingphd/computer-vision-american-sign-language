@@ -86,10 +86,3 @@ Example of Each letter:
 - Explain image classifications using  Lime's ImageExplainer.
 
 
-#### TO DO:
-
-- [x] Apply transfer learning
-- [x] Save best model for deployment
-= [ ] Apply LimeExplainer with best model.
-- [ ] Tune the best architecture with keras tuner.
-- [ ] Create a streamlit application for live inference.

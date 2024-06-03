@@ -1,3 +1,12 @@
+### To Dos:
+- [x] Apply transfer learning
+- [ ] Save best model for deployment `[Fix issue with EfficientNet and current tensorlfow!]`
+- [ ] Tune the best architecture with keras tuner.
+- [ ] Apply LimeExplainer with best model. 
+
+- [ ] Deploy a streamlit application for live inference from images. 
+
+
 ### Future Work
 >There are many more iterations to test for this task:
 - [ ] Does image augmentation help the models?
