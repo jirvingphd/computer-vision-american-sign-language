@@ -1,6 +1,7 @@
-Start Time,Name,Precision,Recall,F1-Score,Accuracy,Fit Time,Model Save Fpath
-06/02/2024 20:51:08,towards-data-science,0.041,0.042,0.011,0.048,0:00:06.709319,modeling/models/towards-data-science
-06/02/2024 20:51:50,cnn1-fixed-lr,0.18,0.166,0.127,0.162,0:00:02.463590,modeling/models/cnn1-fixed-lr
-06/02/2024 20:51:58,cnn1-scheduled-lr,0.015,0.082,0.024,0.114,0:00:02.575965,modeling/models/cnn1-scheduled-lr
-06/02/2024 20:52:08,VGG16-01,0.351,0.28,0.273,0.272,0:00:08.395747,modeling/models/VGG16-01
-06/02/2024 20:52:30,EfficientNetB0-1,0.654,0.623,0.612,0.627,0:00:12.641182,modeling/models/EfficientNetB0-1
+Start Time,Name,Precision,Recall,F1-Score,Accuracy,Save Classification Report Fpath,Save History Fpath,Save Confusion Matrix Fpath,Fit Time,Model Save Fpath
+06/03/2024 12:22:14,towards-data-science,0.386,0.318,0.316,0.342,modeling/models/towards-data-science/classification_report.txt,modeling/models/towards-data-science/history.png,modeling/models/towards-data-science/confusion_matrix.png,0:01:43.888912,modeling/models/towards-data-science
+06/03/2024 12:24:25,towards-data-science_lr-schedule,0.312,0.288,0.271,0.294,modeling/models/towards-data-science_lr-schedule/classification_report.txt,modeling/models/towards-data-science_lr-schedule/history.png,modeling/models/towards-data-science_lr-schedule/confusion_matrix.png,0:04:23.701543,modeling/models/towards-data-science_lr-schedule
+06/03/2024 12:28:55,cnn1-fixed-lr,0.355,0.359,0.347,0.368,modeling/models/cnn1-fixed-lr/classification_report.txt,modeling/models/cnn1-fixed-lr/history.png,modeling/models/cnn1-fixed-lr/confusion_matrix.png,0:00:21.583943,modeling/models/cnn1-fixed-lr
+06/03/2024 12:29:21,cnn1-scheduled-lr,0.355,0.359,0.346,0.368,modeling/models/cnn1-scheduled-lr/classification_report.txt,modeling/models/cnn1-scheduled-lr/history.png,modeling/models/cnn1-scheduled-lr/confusion_matrix.png,0:00:22.408392,modeling/models/cnn1-scheduled-lr
+06/03/2024 12:29:51,VGG16-01,0.539,0.534,0.518,0.535,modeling/models/VGG16-01/classification_report.txt,modeling/models/VGG16-01/history.png,modeling/models/VGG16-01/confusion_matrix.png,0:01:55.297751,modeling/models/VGG16-01
+06/03/2024 12:31:58,EfficientNetB0-1,0.772,0.769,0.754,0.763,modeling/models/EfficientNetB0-1/classification_report.txt,modeling/models/EfficientNetB0-1/history.png,modeling/models/EfficientNetB0-1/confusion_matrix.png,0:02:04.131142,modeling/models/EfficientNetB0-1

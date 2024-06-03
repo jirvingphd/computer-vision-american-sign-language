@@ -1,5 +1,8 @@
+
+
 # computer-vision-american-sign-language
 
+-  Last Updated: 06/03/2024
 
 <center><img src="images/American_Sign_Language_ASL.svg" width=500px>
 <p>By Psiĥedelisto - Own work, Public Domain, <a href="https://commons.wikimedia.org/w/index.php?curid=53652991">"https://commons.wikimedia.org/w/index.php?curid=53652991</a><p>
@@ -55,7 +58,7 @@ To download:
 
 Example of Each letter:
 
-<img src="images/eda_example_letters.png">
+<img src="images/ed_example_letters.png">
 
 
 ## EDA
@@ -80,54 +83,97 @@ Example of Each letter:
     - No data augmentation due to nature of sign language.
 
 - Constructing Convolutional Neural Networks in tensorflow.
-
+- Applying transfer learning with pretrained models
+- Explain image classifications using  Lime's ImageExplainer.
 
 
 #### TO DO:
-- [ ] Tune the architecture with keras tuner.
-- [ ] Attempt transfer learning
-- [ ] Save best model for deployment
+
+- [x] Apply transfer learning
+- [x] Save best model for deployment
+= [ ] Apply LimeExplainer with best model.
+- [ ] Tune the best architecture with keras tuner.
 - [ ] Create a streamlit application for live inference.
 
 
 ## Results
 
+|   Rank | Name                             |   Precision |   Recall |   F1-Score |   Accuracy | Fit Time       | Model Save Fpath                                 |
+|-------:|:---------------------------------|------------:|---------:|-----------:|-----------:|:---------------|:-------------------------------------------------|
+|      1 | EfficientNetB0-1                 |       0.772 |    0.769 |      0.754 |      0.763 | 0:02:04.131142 | modeling/models/EfficientNetB0-1                 |
+|      2 | VGG16-01                         |       0.539 |    0.534 |      0.518 |      0.535 | 0:01:55.297751 | modeling/models/VGG16-01                         |
+|      3 | cnn1-fixed-lr                    |       0.355 |    0.359 |      0.347 |      0.368 | 0:00:21.583943 | modeling/models/cnn1-fixed-lr                    |
+|      3 | cnn1-scheduled-lr                |       0.355 |    0.359 |      0.346 |      0.368 | 0:00:22.408392 | modeling/models/cnn1-scheduled-lr                |
+|      5 | towards-data-science             |       0.386 |    0.318 |      0.316 |      0.342 | 0:01:43.888912 | modeling/models/towards-data-science             |
+|      6 | towards-data-science_lr-schedule |       0.312 |    0.288 |      0.271 |      0.294 | 0:04:23.701543 | modeling/models/towards-data-science_lr-schedule |
 
 ### Best Model
 
-- EfficientNetB0
+- EfficientNetB0-1
 
 
 #### Test Results
 
 
-<img src="images/best_model_history.png">
+<img src="modeling/models/EfficientNetB0-1/history.png">
 
 ```
----------------------------------------------------------------------
- Classification Metrics: Test Data
-----------------------------------------------------------------------
+--------------------------------------------------------------------------------
+ Classification Metrics: Test Data 
+--------------------------------------------------------------------------------
               precision    recall  f1-score   support
-    accuracy                           0.78       228
-   macro avg       0.78      0.79      0.77       228
-weighted avg       0.79      0.78      0.77       228
+
+           A       1.00      1.00      1.00        13
+           B       0.75      0.60      0.67         5
+           C       1.00      0.70      0.82        10
+           D       0.67      0.67      0.67         9
+           E       0.89      0.89      0.89         9
+           F       0.75      0.43      0.55         7
+           G       0.77      1.00      0.87        10
+           H       0.86      0.60      0.71        10
+           I       0.69      0.53      0.60        17
+           J       0.67      1.00      0.80         6
+           K       1.00      1.00      1.00         5
+           L       0.82      0.82      0.82        11
+           M       0.40      0.40      0.40         5
+           N       0.78      0.58      0.67        12
+           O       0.70      0.88      0.78         8
+           P       1.00      0.45      0.62        11
+           Q       0.78      0.78      0.78         9
+           R       0.50      0.83      0.62         6
+           S       0.87      1.00      0.93        13
+           T       1.00      0.71      0.83         7
+           U       0.67      0.67      0.67         6
+           V       0.64      0.82      0.72        11
+           W       0.60      0.86      0.71         7
+           X       0.54      0.78      0.64         9
+           Y       0.75      1.00      0.86         3
+           Z       1.00      1.00      1.00         9
+
+    accuracy                           0.76       228
+   macro avg       0.77      0.77      0.75       228
+weighted avg       0.79      0.76      0.76       228
+
+--------------------------------------------------------------------------------
 ```
 
 
+<img src="modeling/models/EfficientNetB0-1/classification_report.txt">
 
 
-<img src="images/best_model_conf_matrix.png">
+#### Example Explanationsfor Model Predictions (Comging Soon!)
+> Placeholder for example explanation of correctly classified image
+> Placeholder for example explanation of incorrectly classified image
+> Placeholder for example explanation of the 2 clases most often confused for each other.
 
-<img src="images/best_model_results_bar.png">
+### Future Work
+>There are many more iterations to test for this task:
+- [ ] Does image augmentation help the models?
+- [ ] Does adding additional hiddden layers on top of EfficientNet improve performance
+- [ ] Does allowing the transfer learning models to train the convolutional base improve performance?
 
+> **The next level of complextiy would be to add object detection for hands, followed by sign classification.**
+## Summary
+This project demonstrates proof-of-concept work classifying ASL alphabetical characters. Working with a 26-label classification model is tricky, but pales in comparison to what would be required to interpert whole ASL words.
 
-```
-
-CPU times: user 2min 47s, sys: 31.5 s, total: 3min 18s
-Wall time: 2min 40s
-
-- Evaluating Test Data:
-8/8 [==============================] - 2s 238ms/step - loss: 0.8256 - accuracy: 0.7763
-{'loss': 0.8255632519721985, 'accuracy': 0.7763158082962036}
-```
 

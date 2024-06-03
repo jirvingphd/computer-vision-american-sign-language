@@ -2,6 +2,8 @@
 import logging
 import time
 import datetime as dt
+import os
+import matplotlib.pyplot as plt
 
 def initialize_logs(log_file = 'logs/nn_training.log', overwrite_logs=True,
                     log_header = ";start_time;name;fit_time;metrics;model_filepaths",):
@@ -139,3 +141,167 @@ def save_model_results(model_results, model_directory='modeling/models', model_s
     }
 
 
+# pd.read_csv()
+def load_model_results(model_name, model_directory='modeling/models/',
+                       load_model=True, figs_as_matplotlib=True):
+    """
+    Loads the model, classification report, training history, and confusion matrix from the specified directory.
+    
+    Parameters:
+        model_name (str): Base name for the files to be loaded.
+        model_directory (str): Directory where files are saved.
+    
+    Returns:
+        dict: Dictionary containing the loaded files.
+    """
+    import os
+    import tensorflow as tf
+    import matplotlib.pyplot as plt
+    from tensorflow.keras.utils import load_img, img_to_array, array_to_img
+    
+    # Load model
+    model_fpath = os.path.join(model_directory, model_name)
+
+    
+    # Load classification report
+    classification_report_fpath = os.path.join(model_fpath, "classification_report.txt")
+    with open(classification_report_fpath, "r") as f:
+        classification_report = f.read()
+    
+    # Load training history
+    history_fpath = os.path.join(model_fpath, f"history.png")
+    
+    if figs_as_matplotlib:
+        history_fig,ax  = plt.subplots()
+        ax.imshow(plt.imread(history_fpath))
+        ax.axis('off')
+
+    else:
+        history_fig = load_img(history_fpath)
+    # history_fig = plt.imread(history_fpath)
+    
+    # Load confusion matrix
+    confusion_matrix_fpath = os.path.join(model_fpath, "confusion_matrix.png")
+    
+    if figs_as_matplotlib:
+        confusion_matrix_fig, ax  = plt.subplots()
+        ax.imshow(plt.imread(confusion_matrix_fpath))
+        ax.axis('off')
+
+        
+    else:
+        confusion_matrix_fig = load_img(confusion_matrix_fpath)
+    
+    loaded =  {
+        "classification_report": classification_report,
+        "history_fig": history_fig,
+        "confusion_matrix_fig": confusion_matrix_fig
+    }
+    if load_model:
+        model = tf.keras.models.load_model(model_fpath)
+    
+        loaded['model'] = model
+    return loaded
+
+
+
+def parse_log_file(log_file, sep=';', keep_only_startswith=['info:root'], clean_results=True,remove_fpaths=True,
+                   save_csv=True, save_fpath=None):
+    """
+    Parses a log file and returns a pandas DataFrame containing the log data.
+
+    Parameters:
+    - log_file (str): The path to the log file.
+    - sep (str): The separator used to split the log lines into columns. Default is ';'.
+    - keep_only (str): The prefix of the lines to keep in the log file. Default is 'info:root'.
+
+    Returns:
+    - logs_df (pandas DataFrame): The parsed log data as a DataFrame.
+
+    """
+    if (save_fpath is None) and (save_csv==True):
+        save_fpath = log_file.replace('.log', '.csv')
+    import ast
+    import pandas as pd
+    
+    # Read logs
+    with open(log_file, 'r') as file:
+        log_lines = file.readlines()
+        file.seek(0)
+        
+    # Remove unwanted lines
+    split_lines = []
+    for line in log_lines:
+        compare_line = line.strip().lower()
+        for keep_only in keep_only_startswith:
+            if compare_line.startswith(keep_only.lower()):
+                split_lines.append(line.strip().strip(sep).split(sep))
+                # break
+            
+        # if line.strip().lower().startswith(keep_only):
+        #     split_lines.append(line.strip().split(sep))
+
+    # Create DataFrame
+    # try:
+    logs_df = pd.DataFrame(split_lines[1:], columns=split_lines[0])
+    # ?except Exception as e:
+    #     display(e)
+    #     # display(split_lines[0])
+    #     logs_df = pd.DataFrame(split_lines)
+    #     display(logs_df)
+    # Fill NaN values and convert metrics column to dictionary
+    logs_df = logs_df.fillna("{}")
+    logs_df['metrics'] = logs_df['metrics'].map(lambda x: ast.literal_eval(x))
+    metrics_df = pd.json_normalize(logs_df['metrics'])
+    
+    ## Concatenate metrics columns to main dataframe
+    logs_df = pd.concat([logs_df.drop(columns=['metrics']), metrics_df], axis=1)
+
+    # If model_filepaths column exists, convert to dictionary and normalize
+    if 'model_filepaths' in logs_df.columns:
+        logs_df['model_filepaths'] = logs_df['model_filepaths'].map(lambda x: ast.literal_eval(x))
+        fpaths_df = pd.json_normalize(logs_df['model_filepaths'])
+        
+        
+        logs_df = pd.concat([logs_df.drop(columns='model_filepaths'), fpaths_df], axis=1)
+    
+        # logs_df.columns=[c.replace("_"," ").title() for c in logs_df.columns]
+
+    if save_csv and not clean_results:
+        # Make titled columns
+        logs_df.to_csv(save_fpath, index=False)
+        print(f"\n[i] Saved parsed logs to {save_fpath}")
+
+
+
+    if clean_results:
+        drop_cols = ['support']
+        
+        if remove_fpaths==True:
+            try:
+                drop_cols.extend([f for f in logs_df.drop(columns="model_save_fpath").columns if 'fpath' in f])
+            except:
+                
+                display(logs_df.head())
+            # except Exception as e:disp
+            
+        
+        first_col = logs_df.columns[0]
+        if first_col.lower().startswith("info:root"):
+            drop_cols.append(first_col)
+        logs_df = logs_df.drop(columns=drop_cols)# errors='ignore')
+        
+        logs_df = logs_df.round(3)
+        ## rearrange columns
+        move_to_end = ['fit_time','model_save_fpath']
+        logs_df = logs_df[ logs_df.drop(columns=move_to_end).columns.tolist()+move_to_end]
+        # Make titled columns
+        logs_df.columns=[c.replace("_"," ").title() for c in logs_df.columns]
+        
+        if save_csv:
+            logs_df.to_csv(save_fpath, index=False)
+            print(f"\n[i] Saved parsed logs to {save_fpath}")
+            
+    
+
+    return logs_df
