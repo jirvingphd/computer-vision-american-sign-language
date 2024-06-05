@@ -5,43 +5,67 @@ import datetime as dt
 import os
 import matplotlib.pyplot as plt
 
-def initialize_logs(log_file = 'logs/nn_training.log', overwrite_logs=True,
-                    log_header = ";start_time;name;fit_time;metrics;model_filepaths",):
+def initialize_logs(log_file='logs/nn_training.log', overwrite_logs=True,
+                    log_header=";start_time;name;fit_time;metrics;model_filepaths"):
+    """
+    Initializes the logging configuration and sets up the log file.
+
+    Parameters:
+    log_file (str): The path to the log file. Default is 'logs/nn_training.log'.
+    overwrite_logs (bool): If True, the log file will be overwritten. If False, new logs will be appended to the existing file. Default is True.
+    log_header (str): The header to be written in the log file. Default is ";start_time;name;fit_time;metrics;model_filepaths".
+
+    Returns:
+    None
+    """
     
-    
-    # #add deleting log file
-    if overwrite_logs==True:
+    if overwrite_logs:
         filemode = "w"
-        force=True
+        force = True
     else:
         filemode = 'a'
         force = False
         
-    logging.basicConfig(filename=log_file, level=logging.INFO, filemode=filemode,force=force)#, format='%(message)s')
+    logging.basicConfig(filename=log_file, level=logging.INFO, filemode=filemode, force=force)
     logging.info(log_header)
-
+    
 
 
 # Function to log neural network details
-def log_nn_details(start_time, name, fit_time, results_overall,model_filepaths=None,
-                #    model_fpath=None, model_classification_report_fpath=None,
-                #    model_history_fpath=None, model_confusion_matrix_fpath=None, 
-                   sep=";"):
-    
+def log_nn_details(start_time, name, fit_time, results_overall, model_filepaths=None, sep=";", **kwargs):
+    """
+    Logs the details of a neural network model.
+
+    Parameters:
+    - start_time (datetime): The start time of the model training.
+    - name (str): The name of the model.
+    - fit_time (float): The time taken to fit the model.
+    - results_overall (pandas.DataFrame or dict): The overall results of the model evaluation.
+    - model_filepaths (dict or None): The filepaths of the model files, if available.
+    - sep (str): The separator used to format the log information.
+    - **kwargs: Additional keyword arguments.
+
+    Returns:
+    None
+    """
+
     if model_filepaths is not None:
-        fpaths_dict= model_filepaths
+        fpaths_dict = model_filepaths
     else:
         fpaths_dict = "N/A"
-        
-    
+
     # Record results (except for filepaths)
-    metrics = results_overall.loc['macro avg'].to_dict()
-    info = f"{sep}{start_time.strftime('%m/%d/%Y %T')}{sep}{name}{sep}{fit_time}{sep}{metrics}{sep}{fpaths_dict}" 
-    
-        
+    try:
+        metrics = results_overall.loc['macro avg'].to_dict()
+    except:
+        metrics = results_overall
+
+    info = f"{sep}{start_time.strftime('%m/%d/%Y %T')}{sep}{name}{sep}{fit_time}{sep}{metrics}{sep}{fpaths_dict}"
+
     ## Log Info
     logging.info(info)
     
+
     
 
 
@@ -141,9 +165,14 @@ def save_model_results(model_results, model_directory='modeling/models', model_s
     }
 
 
-# pd.read_csv()
-def load_model_results(model_name, model_directory='modeling/models/',
-                       load_model=True, figs_as_matplotlib=True):
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow.keras.utils import load_img, img_to_array, array_to_img
+
+def load_model_results(model_fpath=None, model_name=None, model_directory=None,
+                       load_model=True, figs_as_matplotlib=True,
+                       ):
     """
     Loads the model, classification report, training history, and confusion matrix from the specified directory.
     
@@ -154,54 +183,73 @@ def load_model_results(model_name, model_directory='modeling/models/',
     Returns:
         dict: Dictionary containing the loaded files.
     """
-    import os
-    import tensorflow as tf
-    import matplotlib.pyplot as plt
-    from tensorflow.keras.utils import load_img, img_to_array, array_to_img
     
     # Load model
-    model_fpath = os.path.join(model_directory, model_name)
+    if model_fpath is None and model_name is  None and model_directory is  None:
+                raise Exception("Please provide a model_fpath or model_name and model_directory.")
 
-    
+    if model_fpath is None and model_name is not None and model_directory is not None:
+        model_fpath = os.path.join(model_directory, model_name)
+    else:
+        model_fpath = model_fpath
+
     # Load classification report
-    classification_report_fpath = os.path.join(model_fpath, "classification_report.txt")
-    with open(classification_report_fpath, "r") as f:
-        classification_report = f.read()
+    try:
+        classification_report_fpath = os.path.join(model_fpath, "classification_report.txt")
+        with open(classification_report_fpath, "r") as f:
+            classification_report = f.read()
+    except Exception as e:
+        classification_report = None
+        print(f"Error loading classification report: {e}")
     
     # Load training history
     history_fpath = os.path.join(model_fpath, f"history.png")
     
-    if figs_as_matplotlib:
-        history_fig,ax  = plt.subplots()
-        ax.imshow(plt.imread(history_fpath))
-        ax.axis('off')
+    try:
+        if figs_as_matplotlib:
+            history_fig,ax  = plt.subplots()
+            ax.imshow(plt.imread(history_fpath))
+            ax.axis('off')
 
-    else:
-        history_fig = load_img(history_fpath)
+        else:
+            history_fig = load_img(history_fpath)
+    except Exception as e:
+        history_fig = None
+        print(f"Error loading history: {e}")
     # history_fig = plt.imread(history_fpath)
     
-    # Load confusion matrix
-    confusion_matrix_fpath = os.path.join(model_fpath, "confusion_matrix.png")
-    
-    if figs_as_matplotlib:
-        confusion_matrix_fig, ax  = plt.subplots()
-        ax.imshow(plt.imread(confusion_matrix_fpath))
-        ax.axis('off')
-
+    try:
+        # Load confusion matrix
+        confusion_matrix_fpath = os.path.join(model_fpath, "confusion_matrix.png")
         
-    else:
-        confusion_matrix_fig = load_img(confusion_matrix_fpath)
+        if figs_as_matplotlib:
+            confusion_matrix_fig, ax  = plt.subplots()
+            ax.imshow(plt.imread(confusion_matrix_fpath))
+            ax.axis('off')
+
+            
+        else:
+            confusion_matrix_fig = load_img(confusion_matrix_fpath)
+            
+    except Exception as e:
+        confusion_matrix_fig = None
+        print(f"Error loading confusion matrix: {e}")
     
     loaded =  {
         "classification_report": classification_report,
         "history_fig": history_fig,
         "confusion_matrix_fig": confusion_matrix_fig
     }
-    if load_model:
-        model = tf.keras.models.load_model(model_fpath)
     
+    if load_model:
+        try:
+            model = tf.keras.models.load_model(model_fpath)
+        except Exception as e:
+            model = None
+            print(f"Error loading model: {e}")
         loaded['model'] = model
     return loaded
+
 
 
 
@@ -289,12 +337,18 @@ def parse_log_file(log_file, sep=';', keep_only_startswith=['info:root'], clean_
         first_col = logs_df.columns[0]
         if first_col.lower().startswith("info:root"):
             drop_cols.append(first_col)
-        logs_df = logs_df.drop(columns=drop_cols)# errors='ignore')
+        logs_df = logs_df.drop(columns=drop_cols, errors='ignore')# errors='ignore')
         
         logs_df = logs_df.round(3)
+        
         ## rearrange columns
         move_to_end = ['fit_time','model_save_fpath']
-        logs_df = logs_df[ logs_df.drop(columns=move_to_end).columns.tolist()+move_to_end]
+        for col in move_to_end:
+            if col not in logs_df.columns:
+                move_to_end.remove(col)
+                
+        if logs_df.columns.isin(move_to_end).any():
+            logs_df = logs_df[ logs_df.drop(columns=move_to_end, errors='ignore').columns.tolist()+move_to_end]
         # Make titled columns
         logs_df.columns=[c.replace("_"," ").title() for c in logs_df.columns]
         

@@ -1,3 +1,17 @@
+def delete_global_variable_if_exists(var_name: str,verbose=True):
+    """# Example usage
+    global_var = 20
+    delete_global_variable_if_exists('global_var')
+    print(global_var)  # This will raise a NameError if global_var was successfully deleted
+    """
+    if var_name in globals():
+        del globals()[var_name]
+        if verbose:
+            print(f"Deleted global variable: {var_name}")
+    else:
+        if verbose:
+            print(f"Global variable: {var_name} not found.")
+
 
 def reference_set_seed_keras(markdown=True):
     
@@ -583,4 +597,5 @@ def get_or_print_filesize(fpath, unit ="MB", print_or_return='print'):
         print(formatted_size)
     else: 
         return formatted_size
+    
     
