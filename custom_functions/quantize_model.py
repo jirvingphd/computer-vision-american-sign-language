@@ -47,7 +47,7 @@ def convert_to_quantized_tflite(model_path, output_path, representative_dataset=
     
     if representative_dataset:
         def representative_data_gen():
-            for data,_ in representative_dataset.batch(1).take(100):
+            for data,_ in representative_dataset.take(100):
                 yield [data]
 
         converter.representative_dataset = representative_data_gen

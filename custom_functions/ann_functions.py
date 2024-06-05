@@ -694,3 +694,72 @@ def get_true_pred_labels_images(model, ds, include_images=True, convert_y_for_sk
         return y_true, y_pred, all_images
 
 
+
+
+def custom_evaluate_classification_network(model, X_test, history=None, figsize=(15,15), target_names=None,
+                                            #  as_frame=True, 
+                                             frame_include_macro_avg=True, frame_include_support=False,
+                                             display_bar=False, bar_subset_cols = ['recall','precision','f1-score'], 
+                                             conf_matrix_text_kws={'fontsize': 'x-small'},
+                                             return_figs= True, return_str_report=True):
+    """
+    Evaluate a classification model on a test dataset.
+
+    Parameters:
+    - model: The trained classification model.
+    - X_test: The test dataset.
+    - history: The training history of the model (optional).
+    - figsize: The size of the figure for plotting the evaluation results (default: (15, 15)).
+    - target_names: The names of the target classes (default: None).
+    - as_frame: Whether to return the evaluation results as a pandas DataFrame (default: True).
+    - frame_include_macro_avg: Whether to include macro average metrics in the DataFrame (default: False).
+    - frame_include_support: Whether to include support values in the DataFrame (default: False).
+    - display_bar: Whether to display the evaluation results as a styled bar chart (default: True).
+
+    Returns:
+    - results_dict: A dictionary containing the evaluation results.
+    """
+    if target_names is None:
+        # label_lookup is in the global scope
+        target_names = label_lookup.values()
+        
+    results_dict = evaluate_classification_network(model,
+                                                      X_test=X_test,history=history, figsize=figsize,
+                                                # Set output to produce a dataframe (no option)
+                                                  output_dict=True, as_frame=True,
+                                                  target_names=target_names,
+                                                  return_fig_conf_matrix=return_figs,
+                                                  return_fig_history=return_figs,
+                                                    frame_include_macro_avg=frame_include_macro_avg, 
+                                                    frame_include_support=frame_include_support,
+                                                    values_format=".2f",
+                                                    conf_matrix_text_kws=conf_matrix_text_kws,
+                                                    return_str_report=return_str_report)
+    
+    if isinstance(results_dict, tuple):
+        results_dict, fig_dict = results_dict
+        # if isinstance(results_dict, dict):
+        #     class_results = results_dict['test']['results-classes']
+        #     overall_results = results_dict['test']['results-overall']
+        # else:
+        #     class_results = results_dict['test']['results-classes']
+        #     overall_results = None
+        #     # print(results_dict)
+    else:
+        raise Exception("Results dict not a tuple")
+    # elif isinstance(results_dict, dict):
+    #     class_results = results_dict['test']['results-classes']
+    #     overall_results = results_dict['test']['results-overall']:
+        
+    return_list = [results_dict]
+    
+    if display_bar:
+        try:
+            plot_data = results_dict['test']['results-classes']
+            display(plot_data.style.bar(subset=bar_subset_cols, color='#5fba7d').format(formatter= lambda x: f"{x:.2f}").set_caption("Test Data"))
+        except:
+            display(results_dict)
+        
+    if return_figs:
+        return results_dict, fig_dict
+    return results_dict
