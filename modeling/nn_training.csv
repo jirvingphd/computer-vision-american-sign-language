@@ -1,1 +1,5 @@
-Start Time,Name,Fit Time
+Start Time,Name,Precision,Recall,F1-Score,Accuracy,Fit Time,Model Save Fpath
+06/05/2024 15:31:01,towards-data-science-blog,0.448,0.412,0.398,0.434,0:01:18.334031,modeling/models/towards-data-science-blog
+06/05/2024 15:32:29,cnn1-fixed-lr,0.423,0.416,0.384,0.408,0:00:21.193804,modeling/models/cnn1-fixed-lr
+06/05/2024 15:32:56,cnn1-scheduled-lr,0.002,0.038,0.003,0.039,0:00:09.939975,modeling/models/cnn1-scheduled-lr
+06/05/2024 15:33:12,VGG16-01,0.636,0.629,0.603,0.645,0:01:42.950122,modeling/models/VGG16-01
