@@ -3,8 +3,7 @@ from . import utils as utils
 from . import model_logging as logs
 from . import fileinfo as fileinfo
 from . import quantize_model as quantize
-
-
+from . import capture_output as capture
 
 def show_code(function):
 	"""
